@@ -9,7 +9,7 @@ mod physics;
 mod graphics;
 
 /// Constant factor to scale all time in the simulation by
-const TIMESCALE: f64 = 2.;
+const TIMESCALE: f64 = 0.5;
 
 #[macroquad::main("Spaaaaaaaaaaaaaaaaaaaace")]
 async fn main() {
@@ -26,14 +26,14 @@ async fn main() {
     };
 
     let mut moon1 = Body {
-        radius: 13.635,
-        mass: 1.23,
-        vel: vec2(0., 150.),
-        pos: vec2(200., 0.),
+        radius: 15.,
+        mass: 1.25,
+        vel: vec2(300., 0.),
+        pos: vec2(-200., 45.),
         acc: Vec2::ZERO,
     };
 
-    let mut moon2 = Body {
+    let mut _moon2 = Body {
         radius: 12.,
         mass: 1.15,
         vel: vec2(0., 100.),
@@ -48,21 +48,20 @@ async fn main() {
     loop {
         clear_background(BLACK);
 
-        calc_and_apply_forces(&mut earth, &mut vec![&mut moon1, &mut moon2]);
-        calc_and_apply_forces(&mut moon1, &mut vec![&mut earth, &mut moon2]);
-        calc_and_apply_forces(&mut moon2, &mut vec![&mut earth, &mut moon1]);
+        calc_and_apply_forces(&mut earth, &mut vec![&mut moon1]);
+        calc_and_apply_forces(&mut moon1, &mut vec![&mut earth]);
 
-        earth.tick(dt);
-        moon1.tick(dt);
-        moon2.tick(dt);
+        earth.tick(dt, &mut vec![&mut moon1]);
+        moon1.tick(dt, &mut vec![&mut earth]);
+        // moon2.tick(dt);
 
-        earth.pos -= earth.pos;
-        moon1.pos -= earth.pos;
-        moon2.pos -= earth.pos;
+        // earth.pos -= earth.pos;
+        // moon1.pos -= earth.pos;
+        // moon2.pos -= earth.pos;
 
         earth.draw();
         moon1.draw();
-        moon2.draw();
+        // moon2.draw();
 
         next_frame().await;
         dt = get_frame_time() as f64 * TIMESCALE;

@@ -1,4 +1,8 @@
-use macroquad::math::{DVec2 as Vec2, dvec2 as vec2};
+use std::f64;
+
+use macroquad::{color::RED, math::{DVec2 as Vec2, dvec2 as vec2}, window::clear_background};
+
+use crate::physics::ImpactType::{HighSpeedHeadOn, HighSpeedSheer, LowSpeedHeadOn, LowSpeedSheer};
 
 /// The gravitational constant
 const G:f64 = 6.67e-11;
@@ -38,9 +42,24 @@ impl Body {
 
     /// Handles all the logic for what happens when the body updates
     /// As of now, only updates the position based on the velocity
-    pub fn tick(&mut self, dt: f64) {
-        self.vel += self.acc * dt;
+    pub fn tick(&mut self, dt: f64, bodies: &mut Vec<&mut Body>) {
         self.pos += self.vel * dt;
+        for body in bodies.iter_mut() {
+            // !WARNING! RANDOM BULLSHIT AHEAD !WARNING //
+            // I HAVE NO IDEA WHY THIS WORKS!! NO TOUCH
+            // Thank you https://splashkit.io/guides/physics/5-collisions-and-gravity/
+            if self.pos.distance(body.pos) < (self.radius + body.radius) {
+                let collision_normal = (self.pos - body.pos).normalize();
+                let offset = (self.pos.distance(body.pos) - self.radius - body.radius) * collision_normal;
+                self.pos -= offset;
+
+                let velocity_dot_normal = self.vel.dot(collision_normal);
+                let velocity_normal = collision_normal * velocity_dot_normal;
+                let velocity_tangent = self.vel - velocity_normal;
+                self.vel = velocity_tangent - 0.9*velocity_normal;
+            }
+        }
+        self.vel += self.acc * dt;
     }
 }
 
