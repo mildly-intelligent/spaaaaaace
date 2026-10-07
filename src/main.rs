@@ -1,6 +1,6 @@
 use macroquad::miniquad::window::set_window_size;
 use macroquad::prelude::*;
-use macroquad::math::dvec2 as vec2;
+use macroquad::math::{DVec2 as Vec2, dvec2 as vec2};
 
 use crate::graphics::Drawable;
 use crate::physics::{Body, calc_and_apply_forces};
@@ -24,15 +24,23 @@ async fn main() {
         mass: 100.,
         vel: vec2(0., 0.),
         pos: vec2(0., 0.) + SCREEN_CENTER,
-        acc: vec2(0., 0.),
+        acc: Vec2::ZERO,
     };
 
-    let mut moon = Body {
+    let mut moon1 = Body {
         radius: 13.635,
         mass: 1.23,
         vel: vec2(0., 150.),
         pos: vec2(200., 0.) + SCREEN_CENTER,
-        acc: vec2(0., 0.),
+        acc: Vec2::ZERO,
+    };
+
+    let mut moon2 = Body {
+        radius: 12.,
+        mass: 1.15,
+        vel: vec2(-100., 10.),
+        pos: vec2(0., 200.) + SCREEN_CENTER,
+        acc: Vec2::ZERO,
     };
 
     // Scaled deltaTime
@@ -42,13 +50,17 @@ async fn main() {
     loop {
         clear_background(BLACK);
 
+        calc_and_apply_forces(&mut earth, &mut moon1);
+        calc_and_apply_forces(&mut earth, &mut moon2);
+        calc_and_apply_forces(&mut moon1, &mut moon2);
+
         earth.draw();
-        moon.draw();
-        
-        calc_and_apply_forces(&mut earth, &mut moon, dt);
+        moon1.draw();
+        moon2.draw();
 
         earth.tick(dt);
-        moon.tick(dt);
+        moon1.tick(dt);
+        moon2.tick(dt);
 
         next_frame().await;
         dt = get_frame_time() as f64 * TIMESCALE;
