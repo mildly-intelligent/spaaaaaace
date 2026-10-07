@@ -32,10 +32,8 @@ impl Body {
 
     /// Applies a net force to a body
     /// Takes the force in Newtons and a normalized vector direction
-    fn apply_force(&mut self, force: f64, direction: Vec2) {
-        let acceleration = force / self.get_mass_kilograms();
-        dbg!(acceleration);
-        self.acc += acceleration * direction;
+    fn apply_force(&mut self, force: Vec2) {
+        self.acc = force / self.get_mass_kilograms();
     }
 
     /// Handles all the logic for what happens when the body updates
@@ -43,14 +41,22 @@ impl Body {
     pub fn tick(&mut self, dt: f64) {
         self.vel += self.acc * dt;
         self.pos += self.vel * dt;
-        self.acc = Vec2::ZERO;
     }
 }
 
-/// Calculates the forces between two bodies and applies that force to the respective bodies.
-pub fn calc_and_apply_forces(b1: &mut Body, b2: &mut Body) {
-    let force = old_white_guy(&b1.mass, &b2.mass, &b1.pos.distance_squared(b2.pos));
-    let dir1 = (b2.pos - b1.pos).normalize();
-    b1.apply_force(force, dir1);
-    b2.apply_force(force, -dir1);
+/// Calculates the net force acting on `b1`
+fn calc_net_forces(b1: &mut Body, others: &mut Vec<&mut Body>) -> Vec2 {
+    let mut net_force = Vec2::ZERO;
+    for b2 in others.iter_mut() {
+        let force = old_white_guy(&b1.mass, &b2.mass, &b1.pos.distance_squared(b2.pos));
+        let direction = (b2.pos - b1.pos).normalize();
+        net_force += force * direction;
+    }
+    net_force
+}
+
+/// Calculates and applies forces acting on `b1`
+pub fn calc_and_apply_forces(b1: &mut Body, others: &mut Vec<&mut Body>) {
+    let force = calc_net_forces(b1, others);
+    b1.apply_force(force);
 }
