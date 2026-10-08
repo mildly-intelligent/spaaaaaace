@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 use crate::physics::Body;
 
 /// Coordinates of the center of the screen (duh dumbass)
-const SCREEN_CENTER: DVec2 = dvec2(965., 540.);
+pub const SCREEN_CENTER: DVec2 = dvec2(965., 540.);
 
 /// Do you want arrows for velocity and acceleration
 const DISPLAY_ARROWS:bool = true;

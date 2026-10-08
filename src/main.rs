@@ -1,6 +1,6 @@
 use macroquad::miniquad::window::set_window_size;
 use macroquad::prelude::*;
-use macroquad::math::{DVec2 as Vec2, dvec2 as vec2};
+use macroquad::math::dvec2 as vec2;
 
 use crate::graphics::Drawable;
 use crate::physics::{Body, calc_and_apply_forces};
@@ -17,29 +17,26 @@ async fn main() {
     set_window_size(1920, 1080);
     set_fullscreen(true);
 
-    let mut earth = Body {
-        radius: 50.,
-        mass: 100.,
-        vel: vec2(0., 0.),
-        pos: vec2(0., 0.),
-        acc: Vec2::ZERO,
-    };
+    let mut earth = Body::new(
+        50.,
+        100.,
+        vec2(0., 0.),
+        vec2(0., 0.),
+    );
 
-    let mut moon1 = Body {
-        radius: 15.,
-        mass: 1.25,
-        vel: vec2(300., 0.),
-        pos: vec2(-200., 45.),
-        acc: Vec2::ZERO,
-    };
+    let mut moon1 = Body::new(
+        15.,
+        1.25,
+        vec2(300., 0.),
+        vec2(-200., 45.),
+    );
 
-    let mut _moon2 = Body {
-        radius: 12.,
-        mass: 1.15,
-        vel: vec2(0., 100.),
-        pos: vec2(400., 0.),
-        acc: Vec2::ZERO,
-    };
+    let mut _moon2 = Body::new(
+        12.,
+        1.15,
+        vec2(0., 100.),
+        vec2(400., 0.),
+    );
 
     // Scaled deltaTime
     let mut dt = 1./60. * TIMESCALE;

@@ -1,8 +1,6 @@
 use std::f64;
 
-use macroquad::{color::RED, math::{DVec2 as Vec2, dvec2 as vec2}, window::clear_background};
-
-use crate::physics::ImpactType::{HighSpeedHeadOn, HighSpeedSheer, LowSpeedHeadOn, LowSpeedSheer};
+use macroquad::math::DVec2 as Vec2;
 
 /// The gravitational constant
 const G:f64 = 6.67e-11;
@@ -29,6 +27,16 @@ pub struct Body {
 }
 
 impl Body {
+    pub fn new(radius: f64, mass: f64, vel: Vec2, pos: Vec2) -> Self {
+        Self {
+            radius,
+            mass,
+            vel,
+            pos,
+            ..Default::default()
+        }
+    }
+
     /// Converts the body's mass from ¯\_(ツ)_/¯ to kg
     pub fn get_mass_kilograms(&self) -> f64 {
         self.mass / 1e+15
@@ -56,10 +64,22 @@ impl Body {
                 let velocity_dot_normal = self.vel.dot(collision_normal);
                 let velocity_normal = collision_normal * velocity_dot_normal;
                 let velocity_tangent = self.vel - velocity_normal;
-                self.vel = velocity_tangent - 0.9*velocity_normal;
+                self.vel = velocity_tangent - 0.6*velocity_normal;
             }
         }
         self.vel += self.acc * dt;
+    }
+}
+
+impl Default for Body {
+    fn default() -> Self {
+        Self {
+            radius: 0.,
+            mass: 0.,
+            vel: Vec2::ZERO,
+            pos: crate::graphics::SCREEN_CENTER / 2.,
+            acc: Vec2::ZERO,
+        }
     }
 }
 
