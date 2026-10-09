@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::physics::Body;
+use crate::physics::{Bodies, Body};
 
 /// Coordinates of the center of the screen (duh dumbass)
 pub const SCREEN_CENTER: DVec2 = dvec2(965., 540.);
@@ -38,6 +38,14 @@ impl Drawable for Body {
                 pos.x as f32 + self.acc.x as f32 / 5., pos.y as f32 + self.acc.y as f32 / 5.,
                 5., FORCE_ARROW_COLOR
             );
+        }
+    }
+}
+
+impl Drawable for Bodies {
+    fn draw(&self) {
+        for body in self.iter() {
+            body.draw();
         }
     }
 }

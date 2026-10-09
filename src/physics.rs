@@ -1,5 +1,3 @@
-use std::f64;
-
 use macroquad::math::DVec2 as Vec2;
 
 /// The gravitational constant
@@ -12,27 +10,27 @@ pub fn old_white_guy(m1: &f64, m2: &f64, distance_squared: &f64) -> f64 {
 }
 
 /// Gravitational body
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Body {
     /// Radius of the body in pixels
     pub radius: f64,
     /// Mass of the body in ¯\_(ツ)_/¯
     pub mass: f64,
-    /// Velocity of the body in pixels per second
-    pub vel: Vec2,
     /// Position of the body in pixels
     pub pos: Vec2,
+    /// Velocity of the body in pixels per second
+    pub vel: Vec2,
     /// Acceleration, used for drawing arrows
     pub acc: Vec2,
 }
 
 impl Body {
-    pub fn new(radius: f64, mass: f64, vel: Vec2, pos: Vec2) -> Self {
+    pub fn new(radius: f64, mass: f64, pos: Vec2, vel: Vec2) -> Self {
         Self {
             radius,
             mass,
-            vel,
             pos,
+            vel,
             ..Default::default()
         }
     }
@@ -50,7 +48,7 @@ impl Body {
 
     /// Handles all the logic for what happens when the body updates
     /// As of now, only updates the position based on the velocity
-    pub fn tick(&mut self, dt: f64, bodies: &mut Vec<&mut Body>) {
+    pub fn tick(&mut self, dt: f64, bodies: &mut Vec<Box<Body>>) {
         self.pos += self.vel * dt;
         for body in bodies.iter_mut() {
             // !WARNING! RANDOM BULLSHIT AHEAD !WARNING //
@@ -69,6 +67,23 @@ impl Body {
         }
         self.vel += self.acc * dt;
     }
+
+    /// Calculates the net force acting on `b1`
+    fn calc_net_forces(&mut self, others: &mut Vec<Box<Body>>) -> Vec2 {
+        let mut net_force = Vec2::ZERO;
+        for b2 in others.iter_mut() {
+            let force = old_white_guy(&self.mass, &b2.mass, &self.pos.distance_squared(b2.pos));
+            let direction = (b2.pos - self.pos).normalize();
+            net_force += force * direction;
+        }
+        net_force
+    }
+
+    /// Calculates and applies forces acting on `b1`
+    pub fn calc_and_apply_forces(&mut self, others: &mut Vec<Box<Body>>) {
+        let force = self.calc_net_forces(others);
+        self.apply_force(force);
+    }
 }
 
 impl Default for Body {
@@ -76,26 +91,70 @@ impl Default for Body {
         Self {
             radius: 0.,
             mass: 0.,
-            vel: Vec2::ZERO,
             pos: crate::graphics::SCREEN_CENTER / 2.,
+            vel: Vec2::ZERO,
             acc: Vec2::ZERO,
         }
     }
 }
 
-/// Calculates the net force acting on `b1`
-fn calc_net_forces(b1: &mut Body, others: &mut Vec<&mut Body>) -> Vec2 {
-    let mut net_force = Vec2::ZERO;
-    for b2 in others.iter_mut() {
-        let force = old_white_guy(&b1.mass, &b2.mass, &b1.pos.distance_squared(b2.pos));
-        let direction = (b2.pos - b1.pos).normalize();
-        net_force += force * direction;
-    }
-    net_force
-}
+pub struct Bodies(Vec<Box<Body>>);
+impl IntoIterator for Bodies {
+    type Item = Box<Body>;
 
-/// Calculates and applies forces acting on `b1`
-pub fn calc_and_apply_forces(b1: &mut Body, others: &mut Vec<&mut Body>) {
-    let force = calc_net_forces(b1, others);
-    b1.apply_force(force);
+    type IntoIter = <Vec<Box<Body>> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+impl Bodies {
+    pub fn new<const N: usize>(items: [Box<Body>; N]) -> Self {
+        Self(Vec::from(items))
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Box<Body>> {
+        self.0.iter()
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Separates one item from the list out
+    // pub fn split(&mut self, index: usize) -> (&mut Body, Vec<&mut Body>) {
+    //     // HOLY SHIT I DID IT
+    //     let mut copy: Vec<&mut Body> = self.0.iter()
+    //         .map(|a| &**a)
+    //         .copied()
+    //         .collect();
+    //     copy.remove(index);
+    //     (self.0[index], copy)
+    // }
+
+    pub fn fadslk(&self, index: usize) -> Vec<usize> {
+        (0..self.len()).filter(|a| a != &index).collect()
+    }
+
+    pub fn calc_and_apply_forces(&mut self) {
+        for i in 0..self.len() {
+            let others = self.fadslk(i);
+            let mut others = others
+                .iter()
+                .map(|a| self.0.get(*a).unwrap().clone())
+                .collect();
+            (*self.0.get_mut(i).unwrap()).calc_and_apply_forces(&mut others);
+        }
+    }
+
+    pub fn tick(&mut self, dt: f64) {
+        for i in 0..self.len() {
+            let others = self.fadslk(i);
+            let mut others = others
+                .iter()
+                .map(|a| self.0.get(*a).unwrap().clone())
+                .collect();
+            (*self.0.get_mut(i).unwrap()).tick(dt, &mut others);
+        }
+    }
 }
